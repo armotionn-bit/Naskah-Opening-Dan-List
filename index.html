@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Beddian Media - Pendataan Film</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <style>
+        body { background: #e6f0ff; font-family: Arial, sans-serif; }
+        .card { border-radius: 20px; }
+        /* FOTO PROFIL (2x4) */
+        .profile-img { 
+            width:200px; 
+            height:200px; 
+            object: 50px;:cover; 
+            border-radius:50%; 
+            border:4px solid #ffffff; 
+            box-shadow:0 0 10px rgba(0,0,0,0.3); 
+        }
+        .btn-primary { background: #004aad; border:none; }
+        .btn-primary:hover { background: #003680; }
+        #dataSection, #scriptSection { display:none; }
+        #homeSection { display:block; }
+        .text-primary-dark { color: #003680; }
+        .shadow-blue { box-shadow: 0 4px 15px rgba(0,74,173,0.4); }
+        
+        /* FOTO GALERI ORGANISASI (Modifikasi untuk responsif dan animasi) */
+        .org-gallery { 
+            display: flex; 
+            flex-wrap: wrap; 
+            justify-content: center;
+        }
+        .org-gallery .col-md-4 { 
+            padding: 5px; 
+        }
+        .org-img { 
+            width: 100%; 
+            height: 150px; 
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease; /* Transisi halus */
+        }
+        .org-img:hover {
+            transform: scale(1.05); /* Memperbesar sedikit saat dihover/disentuh */
+            box-shadow: 0 8px 20px rgba(0,74,173,0.5); 
+        }
+        /* Responsif untuk Android/Layar Kecil */
+        @media (max-width: 768px) {
+            .org-gallery .col-md-4 {
+                width: 50%; /* 2 kolom di HP */
+                flex: 0 0 50%;
+                max-width: 50%;
+                margin-bottom: 10px;
+            }
+            .table-responsive {
+                overflow-x: auto;
+            }
+            .table-bordered th, .table-bordered td {
+                padding: 0.4rem;
+                font-size: 0.8rem;
+                white-space: nowrap; 
+            }
+            .keterangan {
+                width: 150px;
+                white-space: normal !important; 
+            }
+            .small-file-input {
+                max-width: 80px;
+                font-size: 10px;
+            }
+            .container {
+                padding: 10px;
+            }
+        }
+        /* Gaya Tabel Tugas */
+        .thumb { width: 40px; height: 25px; object-fit: cover; cursor:pointer; border-radius:4px; transition: transform 0.3s ease; }
+        .thumb:hover { transform: scale(1.2); }
+        td.keterangan { width: 200px; }
+        .done { background-color: #d4edda !important; } 
+
+        /* Input File Kecil */
+        .small-file-input {
+            max-width: 100px; 
+            font-size: 12px;  
+            padding: 2px;
+        }
+
+        /* Toggle Checkbox */
+        .checkbox-toggle { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .checkbox-toggle input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #004aad; }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        /* Pop-up Gambar */
+        .popup-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7); display:none; justify-content: center; align-items: center; z-index:1000; }
+        .popup-overlay img { max-width: 80%; max-height: 80%; border-radius:10px; box-shadow:0 0 20px rgba(0,0,0,0.5); animation: popupAnim 0.3s ease; }
+        @keyframes popupAnim { from {transform: scale(0.5); opacity:0;} to {transform: scale(1); opacity:1;} }
+
+        /* Gaya Khusus Naskah Film */
+        .scene-script-container {
+            font-family: 'Courier New', monospace; 
+            font-size: 14px; 
+            line-height: 1.5; 
+            background: #ffffff; 
+            padding: 15px; 
+            border-radius: 10px;
+            white-space: pre-wrap; 
+        }
+        .slugline { margin-top: 15px; color: #004aad; font-weight: bold; text-decoration: underline; }
+        .action { margin-top: 8px; text-transform: none; font-weight: normal; }
+        .character-name { margin-top: 12px; margin-left: 15%; width: 70%; text-align: center; font-weight: bold; color: #8b0000; }
+        .dialogue { margin-left: 10%; width: 80%; padding: 5px; border-left: 3px solid #ccc; }
+        .voiceover { margin-top: 10px; margin-left: 5%; width: 90%; font-style: italic; color: #008000; border: 1px dashed #008000; padding: 8px; }
+        
+    </style>
+</head>
+<body onload="renderTable()">
+<div class="container py-5">
+
+    <div id="homeSection" class="text-center">
+        <div class="card shadow-blue p-5 mb-5 bg-white">
+            <img src="img\1.png" alt="profile-img mb-3" class="Foto Profil">
+            <h1 class="text-primary-dark mb-3">Beddian Media</h1>
+            <p class="mb-4">"Kami adalah Beddian Media, jendela informasi yang didedikasikan untuk mendokumentasikan dan mempublikasikan perjalanan Pondok Pesantren Salafiyah Al Utsmani.</p>
+
+            <div class="row org-gallery">
+                <div class="col-md-4"><img src="img\2.jpg" alt="org-img shadow-blue" class="Foto Organisasi 1"></div>
+                <div class="col-md-4"><img src="img\3.jpg" alt="org-img shadow-blue" class="Foto Organisasi 2"></div>
+                <div class="col-md-4"><img src="img\4.jpg" alts="org-img shadow-blue" class="Foto Organisasi 3"></div>
+            </div>
+
+            <button class="btn btn-primary btn-lg mt-4" onclick="showDataSection()">Lihat Tugas Film</button>
+            <button class="btn btn-primary btn-lg mt-2" onclick="showScriptSection()">Lihat Naskah Film</button>
+        </div>
+    </div>
+
+    <div id="dataSection">
+        <div class="d-flex gap-2 mb-3">
+            <button class="btn btn-secondary" onclick="showHomeSection()">Kembali ke Beranda</button>
+            <button class="btn btn-success" onclick="exportExcel()">Export Excel</button>
+            <button class="btn btn-secondary" onclick="window.print()">Print / PDF</button>
+        </div>
+
+        <div class="mb-3">
+            <label>Progress Penyelesaian:</label>
+            <div class="progress">
+                <div class="progress-bar bg-success" id="progressBar" style="width:0%"></div>
+            </div>
+        </div>
+
+        <div class="card shadow p-4">
+            <h5>List Tugas + Checklist Penyelesaian + Foto Referensi</h5>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped mt-3">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Scene</th>
+                            <th>Tugas / Shot</th>
+                            <th>Angle Camera</th>
+                            <th>Catatan</th>
+                            <th>Selesai</th>
+                            <th class="keterangan">Keterangan</th>
+                            <th>Foto</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelData"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="scriptSection">
+        <button class="btn btn-secondary mb-3" onclick="showHomeSection()">Kembali ke Beranda</button>
+        <div class="card shadow p-4">
+            <h5>Naskah Short Movie</h5>
+            <div class="scene-script-container">
+                <div class="slugline">JUDUL: JEJAK WAKTU PESANTREN SALAFIYAH AL UTSMANI</div>
+                <div class="action">
+                    <p>Daftar Tokoh<br>
+                    • Rafi – Santri baru (~15 tahun)<br>
+                    • Fahri – Santri baru (~16 tahun)<br>
+                    • Ustadz Mahfudz – Asatidz tertua<br>
+                    • Kak Amar – Alumni</p>
+                </div>
+
+                <div class="slugline">SCENE 1 — PEMBUKAAN (PAGI, EKSTERIOR PESANTREN)</div>
+                <div class="action">
+                    KAMERA: Drone shot menampilkan kompleks pesantren, Masjid, asrama, halaman.
+                </div>
+                <div class="character-name">NARATOR (VO)</div>
+                <div class="voiceover">
+                    "Di sebuah dusun bernama Beddian, Desa Jambesari, Bondowoso… berdirilah Pondok Pesantren Salafiyah Al Utsmani. Sejak era 1930-an, pesantren ini menjaga tradisi ilmu dan adab. Dari kitab kuning, hingga bangunan modern masa kini… semua menyimpan cerita."
+                </div>
+                <div class="action">
+                    CUT TO: Gerbang pesantren.
+                </div>
+
+                <div class="slugline">SCENE 2 — KEDATANGAN SANTRI BARU (GERBANG PESANTREN)</div>
+                <div class="action">
+                    KAMERA: Medium shot Rafi dan Fahri menenteng koper, tampak gugup.
+                </div>
+                <div class="character-name">RAFI</div>
+                <div class="dialogue">
+                    "Fahri… gede juga ya pesantrennya. Kirain kecil."
+                </div>
+                <div class="character-name">FAHRI</div>
+                <div class="dialogue">
+                    "Katanya ini pesantren tua, Fi. Banyak sejarahnya."
+                </div>
+                <div class="action">
+                    KAMERA: Tracking mengikuti langkah mereka masuk.
+                </div>
+
+                <div class="slugline">SCENE 3 — BERTEMU USTADZ MAHFUDZ (HALAMAN PESANTREN)</div>
+                <div class="action">
+                    KAMERA: Long shot Ustadz Mahfudz mendekat dengan tongkat kayu.
+                </div>
+                <div class="character-name">USTADZ MAHFUDZ</div>
+                <div class="dialogue">
+                    "Assalamu’alaikum, nak. Kalian santri baru?"
+                </div>
+                <div class="character-name">RAFI & FAHRI</div>
+                <div class="dialogue">
+                    "Wa’alaikumussalam, Ustadz. Iya."
+                </div>
+                <div class="character-name">USTADZ MAHFUDZ</div>
+                <div class="dialogue">
+                    "Selamat datang di Al Utsmani. Semoga kalian jadi bagian dari perjalanan panjang pesantren ini."
+                </div>
+                <div class="character-name">RAFI</div>
+                <div class="dialogue">
+                    "Ustadz… pesantren ini udah lama banget ya berdirinya?"
+                </div>
+                <div class="character-name">USTADZ MAHFUDZ</div>
+                <div class="dialogue">
+                    "Sejak sekitar tahun 1930-an, nak. Dulu hanya bangunan kayu beratap rumbia. Sistemnya salafiyah: sorogan, wetonan, kitab kuning."
+                </div>
+                <div class="action">
+                    KAMERA: Close-up wajah Rafi yang kagum.
+                </div>
+                <div class="character-name">USTADZ MAHFUDZ</div>
+                <div class="dialogue">
+                    "Kalau mau tahu lebih jauh, ikut saya."
+                </div>
+
+                <div class="slugline">SCENE 4 — TUR SEJARAH PESANTREN (MONTASE)</div>
+                <div class="action">
+                    KAMERA: Mereka berjalan melewati bangunan lama. Cut montase: foto lama pesantren, santri mengaji pakai lampu minyak, asrama kayu.
+                </div>
+                <div class="character-name">USTADZ MAHFUDZ (VO)</div>
+                <div class="voiceover">
+                    "Santri dulu hidup sederhana. Tapi semangatnya luar biasa. Tahun 1963, pesantren berkembang — berdirilah madrasah dengan sistem klasikal. Dari situ, Al Utsmani mulai menjadi pusat pendidikan formal."
+                </div>
+                <div class="action">
+                    KAMERA: Montase beralih ke gedung modern, kelas rapi, santri memakai seragam.
+                </div>
+                <div class="character-name">USTADZ MAHFUDZ (VO)</div>
+                <div class="voiceover">
+                    "Dan sekarang… Al Utsmani punya pendidikan lengkap, termasuk perguruan tinggi STAI Al Utsmani."
+                </div>
+
+                <div class="slugline">SCENE 5 — KEDATANGAN ALUMNI (MASJID LAMA)</div>
+                <div class="action">
+                    KAMERA: Medium shot Kak Amar berjalan mendekat.
+                </div>
+                <div class="character-name">KAK AMAR</div>
+                <div class="dialogue">
+                    "Assalamu’alaikum, Ustadz Mahfudz."
+                </div>
+                <div class="character-name">USTADZ MAHFUDZ</div>
+                <div class="dialogue">
+                    "Wa’alaikumussalam… Amar! Sudah lama sekali."
+                </div>
+                <div class="character-name">RAFI</div>
+                <div class="dialogue">
+                    (berbisik) "Siapa itu?"
+                </div>
+                <div class="character-name">FAHRI</div>
+                <div class="dialogue">
+                    "Kayaknya alumni."
+                </div>
+                <div class="character-name">KAK AMAR</div>
+                <div class="dialogue">
+                    "Dulu saya tidur di lantai, belajar pakai lampu minyak. Tapi saya bahagia. Dari pesantren ini saya belajar sabar, ikhlas dan istiqamah."
+                </div>
+
+                <div class="slugline">SCENE 6 — FLASHBACK ALUMNI (VISUAL CEPAT)</div>
+                <div class="action">
+                    KAMERA: Flashback grainy tone — Kak Amar muda belajar sorogan, kerja bakti, mengaji malam.
+                </div>
+                <div class="character-name">KAK AMAR (VO)</div>
+                <div class="voiceover">
+                    "Di sini aku belajar bahwa ilmu itu bukan soal fasilitas, tapi ketekunan."
+                </div>
+
+                <div class="slugline">SCENE 7 — RUANG BELAJAR BARU / GEDUNG MADRASAH</div>
+                <div class="action">
+                    KAMERA: Mereka memasuki kelas modern.
+                </div>
+                <div class="character-name">FAHRI</div>
+                <div class="dialogue">
+                    "Sekarang modern ya, Ustadz… ada kelas, alat belajar… lengkap."
+                </div>
+                <div class="character-name">USTADZ MAHFUDZ</div>
+                <div class="dialogue">
+                    "Zaman boleh berubah, tapi nilai — adab, tawadhu’, dan keberkahan — harus tetap sama."
+                </div>
+                <div class="character-name">RAFI</div>
+                <div class="dialogue">
+                    "Saya ingin punya cerita seperti Kak Amar suatu hari nanti."
+                </div>
+                <div class="character-name">KAK AMAR</div>
+                <div class="dialogue">
+                    "InsyaAllah bisa. Yang penting istiqamah dan niatmu lurus."
+                </div>
+
+                <div class="slugline">SCENE 8 — PENUTUP (HALAMAN PESANTREN, SENJA)</div>
+                <div class="action">
+                    KAMERA: Wide shot senja keemasan. Keempat tokoh berdiri menghadap langit.
+                </div>
+                <div class="character-name">NARATOR (VO)</div>
+                <div class="voiceover">
+                    "Generasi datang dan pergi… tapi Pesantren Salafiyah Al Utsmani tetap hidup. Bukan karena bangunannya, tetapi karena manusia-manusia yang ditempanya. Dan hari ini… perjalanan baru dimulai."
+                </div>
+                <div class="action">
+                    KAMERA: Fade to logo Pesantren Al Utsmani. FADE OUT.
+                </div>
+                
+                <hr>
+
+                <div class="action" style="font-size:12px; font-style: italic; color: #555;">
+                    Nb: “Film pendek ini dibuat semata-mata untuk kepentingan edukasi dan dokumentasi sejarah. Seluruh informasi yang disampaikan dalam film ini merupakan hasil penelusuran dari wawancara, arsip, serta referensi yang tersedia di website resmi dan sumber terkait lainnya. Jika terdapat kekeliruan dalam penyebutan data atau sejarah, hal tersebut tidak disengaja dan akan sangat terbuka untuk perbaikan. Terima kasih kepada seluruh narasumber dan pihak pesantren yang telah memberikan informasi untuk keperluan pembuatan karya ini.”
+                </div>
+                <div class="action" style="text-align: right; margin-top: 10px; font-weight: bold; color: #004aad;">
+                    BEDDIAN MEDIA
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="popup-overlay" id="popupOverlay" onclick="this.style.display='none'"><img id="popupImg"></div>
+
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script>
+// Fungsi untuk menampilkan/menyembunyikan bagian
+function showDataSection(){
+    document.getElementById('homeSection').style.display = 'none';
+    document.getElementById('scriptSection').style.display = 'none';
+    document.getElementById('dataSection').style.display = 'block';
+    renderTable(); 
+}
+function showHomeSection(){
+    document.getElementById('homeSection').style.display = 'block';
+    document.getElementById('dataSection').style.display = 'none';
+    document.getElementById('scriptSection').style.display = 'none';
+}
+function showScriptSection(){
+    document.getElementById('homeSection').style.display = 'none';
+    document.getElementById('dataSection').style.display = 'none';
+    document.getElementById('scriptSection').style.display = 'block';
+}
+
+// Inisialisasi data, ambil dari localStorage jika ada
+let dataList = JSON.parse(localStorage.getItem("filmTasks")) || [
+    {no:1, scene:"Opening", shot:"Drone/Establishing Shot Pesantren", angle:"Drone / Wide Shot", catatan:"Dibuka dengan ambience lembut", selesai:false, ket:"", foto:null},
+    {no:2, scene:"Opening", shot:"Close-up Kitab + Santri Berjalan", angle:"Close-up / Slow Pan", catatan:"Mood tenang & edukatif", selesai:false, ket:"", foto:null},
+    {no:3, scene:"Santri Baru Masuk", shot:"Santri berjalan masuk gerbang", angle:"Medium Shot / Tracking", catatan:"", selesai:false, ket:"", foto:null},
+    {no:4, scene:"Santri Baru Masuk", shot:"Ekspresi kagum santri baru", angle:"Close-up", catatan:"", selesai:false, ket:"", foto:null},
+    {no:5, scene:"Bertemu Alumni", shot:"Alumni menyambut santri", angle:"Two Shot", catatan:"", selesai:false, ket:"", foto:null},
+    {no:6, scene:"Bertemu Alumni", shot:"Alumni mulai bercerita", angle:"Medium Close-Up", catatan:"", selesai:false, ket:"", foto:null},
+    {no:7, scene:"B-roll Flashback", shot:"Kegiatan santri mengaji", angle:"B-roll / Insert Shot", catatan:"", selesai:false, ket:"", foto:null},
+    {no:8, scene:"B-roll Flashback", shot:"Fasilitas pesantren dari masa ke masa", angle:"Wide / Cutaway", catatan:"", selesai:false, ket:"", foto:null},
+    {no:9, scene:"Bertemu Ustad Tertua", shot:"Wawancara ustad tertua", angle:"Low Angle / Static", catatan:"Tampak wibawa", selesai:false, ket:"", foto:null},
+    {no:10, scene:"Bertemu Ustad Tertua", shot:"Detail tangan membuka kitab", angle:"Close-up", catatan:"", selesai:false, ket:"", foto:null},
+    {no:11, scene:"Refleksi & Flashback", shot:"Santri melihat dokumen sejarah", angle:"POV Shot / Slow Motion", catatan:"", selesai:false, ket:"", foto:null},
+    {no:12, scene:"Penutup", shot:"Santri berjalan menuju masjid", angle:"Wide Shot", catatan:"", selesai:false, ket:"", foto:null},
+    {no:13, scene:"Penutup", shot:"Close-up wajah penuh harapan", angle:"Close-up", catatan:"", selesai:false, ket:"", foto:null}
+];
+
+// Fungsi untuk menyimpan data ke Local Storage
+function saveLocal(){
+    localStorage.setItem("filmTasks", JSON.stringify(dataList));
+}
+
+// Fungsi utama untuk merender tabel
+function renderTable() {
+    const table = document.getElementById("tabelData");
+    table.innerHTML = "";
+    let selesaiCount = 0;
+
+    dataList.forEach((item, index) => {
+        if(item.selesai) selesaiCount++;
+        
+        table.innerHTML += `
+            <tr class="${item.selesai ? 'done' : 'not-done'}">
+                <td>${item.no}</td>
+                <td>${item.scene}</td>
+                <td>${item.shot}</td>
+                <td>${item.angle}</td>
+                <td>${item.catatan}</td>
+                <td>
+                    <label class="checkbox-toggle">
+                        <input type="checkbox" onchange="toggleSelesai(${index})" ${item.selesai ? "checked" : ""}>
+                        <span class="slider"></span>
+                    </label>
+                </td>
+                <td class="keterangan">
+                    <input class="form-control" value="${item.ket || ''}" onchange="ubahKet(${index}, this.value)">
+                </td>
+                <td>
+                    ${item.foto 
+                        ? `<img src='${item.foto}' class='thumb' onclick='popupImage(this.src)'>` 
+                        : `<input type='file' accept='image/*' class='small-file-input' onchange='handleUploadFoto(event, ${index})'>`}
+                </td>
+            </tr>`;
+    });
+
+    // Hitung dan tampilkan progress bar
+    const progressPct = dataList.length > 0 ? Math.round((selesaiCount / dataList.length) * 100) : 0;
+    const progressBar = document.getElementById("progressBar");
+    progressBar.style.width = progressPct + '%';
+    progressBar.innerText = progressPct + '%';
+}
+
+// Fungsi untuk toggle status selesai
+function toggleSelesai(index) {
+    dataList[index].selesai = !dataList[index].selesai;
+    saveLocal();
+    renderTable();
+}
+
+// Fungsi untuk mengubah keterangan/catatan
+function ubahKet(index, value) {
+    dataList[index].ket = value;
+    saveLocal();
+}
+
+// Fungsi untuk mengunggah foto
+function handleUploadFoto(event, index) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        dataList[index].foto = e.target.result; // DataURL dari gambar
+        saveLocal();
+        renderTable(); // Render ulang untuk menampilkan thumbnail
+    };
+    reader.readAsDataURL(file);
+}
+
+// Fungsi untuk menampilkan pop-up gambar
+function popupImage(src) {
+    const overlay = document.getElementById('popupOverlay');
+    const popupImg = document.getElementById('popupImg');
+    popupImg.src = src;
+    overlay.style.display = 'flex';
+}
+
+// Fungsi untuk Export ke Excel
+function exportExcel() {
+    const dataToExport = dataList.map(item => ({
+        "No": item.no,
+        "Scene": item.scene,
+        "Tugas / Shot": item.shot,
+        "Angle Camera": item.angle,
+        "Catatan": item.catatan,
+        "Selesai": item.selesai ? "Ya" : "Tidak", 
+        "Keterangan": item.ket
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "TugasFilm");
+    XLSX.writeFile(workbook, "tugas_film_pesantren.xlsx");
+}
+
+// Panggil renderTable saat halaman dimuat pertama kali
+document.addEventListener('DOMContentLoaded', renderTable);
+</script>
+</body>
+
+</html>
